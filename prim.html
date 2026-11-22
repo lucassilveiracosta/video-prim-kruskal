@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Algoritmo de Prim - Execução em Vídeo Interativo (PAA / MST)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <a href="index.html" class="w-9 h-9 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 font-bold hover:bg-sky-500/30 transition">
+          ←
+        </a>
+        <div>
+          <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            Algoritmo de Prim (Árvore Geradora Mínima)
+            <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800">O(E log V)</span>
+          </h1>
+          <p class="text-xs text-slate-400">Crescimento de Árvore Única a partir da Raiz • Corte (S, V \ S)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 text-xs">
+        <a href="index.html" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Visão Unificada</a>
+        <a href="kruskal.html" class="px-3 py-1.5 rounded-lg bg-purple-900/40 hover:bg-purple-800/40 text-purple-300 border border-purple-700/50 transition">Ir para Kruskal →</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Video Player (8 cols) -->
+      <div class="lg:col-span-8 space-y-4">
+        
+        <div class="video-viewport relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+          <canvas id="video-canvas" width="960" height="540"></canvas>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 shadow-lg">
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs text-slate-400 font-mono">
+              <span id="time-readout">00:00 / 00:28</span>
+              <span id="step-readout" class="font-semibold text-sky-400">Passo 1 de 14</span>
+            </div>
+            <input id="timeline-slider" type="range" min="0" max="13" value="0" class="video-scrubber w-full accent-sky-500">
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div class="flex items-center space-x-2">
+              <button id="btn-restart" title="Reiniciar do Início" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </button>
+              <button id="btn-prev" title="Passo Anterior" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <button id="btn-play" class="flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition shadow-lg shadow-sky-950">
+                <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span class="hidden sm:inline">Reproduzir</span>
+              </button>
+              <button id="btn-next" title="Próximo Passo" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+              <button id="btn-sound" title="Alternar Som" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition ml-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+              </button>
+            </div>
+
+            <div class="flex items-center space-x-3 text-xs">
+              <div class="flex items-center space-x-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                <span class="text-slate-400">Velocidade:</span>
+                <select id="speed-select" class="bg-transparent text-sky-400 font-semibold outline-none cursor-pointer">
+                  <option value="0.5" class="bg-slate-900 text-white">0.5x</option>
+                  <option value="1.0" selected class="bg-slate-900 text-white">1.0x</option>
+                  <option value="1.5" class="bg-slate-900 text-white">1.5x</option>
+                  <option value="2.0" class="bg-slate-900 text-white">2.0x</option>
+                </select>
+              </div>
+
+              <button id="btn-record" title="Gravar e baixar vídeo WebM" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition font-medium">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span>Exportar Vídeo (.webm)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Side HUD (4 cols) -->
+      <div class="lg:col-span-4 space-y-4">
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Pseudocódigo de Prim</h3>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 font-mono">Min-Heap</span>
+          </div>
+          <div id="code-container" class="space-y-0.5 font-mono text-xs max-h-52 overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Corte & Fila de Prioridade</h3>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">Fronteira</span>
+          </div>
+          <div id="data-struct-container"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script src="graph-data.js"></script>
+  <script src="audio.js"></script>
+  <script src="recorder.js"></script>
+  <script src="prim-engine.js"></script>
+  <script src="renderer.js"></script>
+  <script src="player.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      new AlgorithmVideoPlayer({
+        canvas: document.getElementById('video-canvas'),
+        algorithmType: 'prim',
+        playBtn: document.getElementById('btn-play'),
+        prevBtn: document.getElementById('btn-prev'),
+        nextBtn: document.getElementById('btn-next'),
+        restartBtn: document.getElementById('btn-restart'),
+        speedSelect: document.getElementById('speed-select'),
+        timeline: document.getElementById('timeline-slider'),
+        timeReadout: document.getElementById('time-readout'),
+        stepReadout: document.getElementById('step-readout'),
+        soundToggleBtn: document.getElementById('btn-sound'),
+        recordBtn: document.getElementById('btn-record'),
+        codeContainer: document.getElementById('code-container'),
+        dataStructContainer: document.getElementById('data-struct-container')
+      });
+    });
+  </script>
+</body>
+</html>

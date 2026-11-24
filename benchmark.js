@@ -171,8 +171,239 @@ int main() {
 };
 
 // ==========================================
-// ESTRUTURAS DE DADOS DE ALTA PERFORMANCE (JS)
+// RENDERIZADOR DO GRAFO NO BENCHMARK (CANVAS 2D)
 // ==========================================
+
+let cachedBenchmarkGraph = null;
+let currentMstEdges = null;
+const benchmarkCache = new Map();
+
+function drawBenchmarkGraph(graph, mstEdges = null) {
+  const canvas = document.getElementById('bench-graph-canvas');
+  if (!canvas || !graph) return;
+
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  const containerW = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
+  const containerH = canvas.parentElement ? canvas.parentElement.clientHeight : 0;
+  const w = rect.width > 10 ? rect.width : (containerW > 10 ? containerW : 700);
+  const h = rect.height > 10 ? rect.height : (containerH > 10 ? containerH : 320);
+
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  ctx.scale(dpr, dpr);
+
+  // Fundo Dark Studio
+  ctx.fillStyle = '#070b14';
+  ctx.fillRect(0, 0, w, h);
+
+  // Grade sutil de fundo
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+  ctx.lineWidth = 1;
+  const grid = 30;
+  for (let x = 0; x < w; x += grid) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for (let y = 0; y < h; y += grid) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  const M = graph.M;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  // Cálculo das posições dos vértices
+  const positions = new Array(M);
+  const rx = Math.max(25, (w / 2) - (M <= 15 ? 45 : 35));
+  const ry = Math.max(25, (h / 2) - (M <= 15 ? 40 : 30));
+
+  if (M <= 35) {
+    // Distribuição em anel único circular com espaçamento perfeito
+    for (let i = 0; i < M; i++) {
+      const theta = (2 * Math.PI * i) / M - Math.PI / 2;
+      positions[i] = {
+        x: cx + rx * Math.cos(theta),
+        y: cy + ry * Math.sin(theta)
+      };
+    }
+  } else if (M <= 120) {
+    // Dois anéis concêntricos balanceados
+    const outerCount = Math.ceil(M * 0.65);
+    const innerCount = M - outerCount;
+    for (let i = 0; i < outerCount; i++) {
+      const theta = (2 * Math.PI * i) / outerCount - Math.PI / 2;
+      positions[i] = {
+        x: cx + rx * Math.cos(theta),
+        y: cy + ry * Math.sin(theta)
+      };
+    }
+    for (let i = 0; i < innerCount; i++) {
+      const theta = (2 * Math.PI * i) / innerCount;
+      positions[outerCount + i] = {
+        x: cx + (rx * 0.52) * Math.cos(theta),
+        y: cy + (ry * 0.52) * Math.sin(theta)
+      };
+    }
+  } else {
+    // Distribuição espiral áurea (Sunflower / Phyllotaxis) para grafos grandes
+    for (let i = 0; i < M; i++) {
+      const r = Math.sqrt((i + 1) / M);
+      const theta = i * 2.3999632; // Golden angle
+      positions[i] = {
+        x: cx + (rx * r) * Math.cos(theta),
+        y: cy + (ry * r) * Math.sin(theta)
+      };
+    }
+  }
+
+  // Conjunto de chaves das arestas da MST para verificação O(1)
+  const mstSet = new Set();
+  if (mstEdges && Array.isArray(mstEdges)) {
+    mstEdges.forEach(e => {
+      const k = e.u < e.v ? `${e.u}_${e.v}` : `${e.v}_${e.u}`;
+      mstSet.add(k);
+    });
+  }
+
+  // 1. Desenha arestas comuns (não-MST)
+  ctx.save();
+  ctx.lineWidth = M <= 50 ? 1.2 : 0.8;
+  ctx.strokeStyle = mstEdges ? 'rgba(71, 85, 105, 0.22)' : 'rgba(56, 189, 248, 0.32)';
+  ctx.beginPath();
+  const maxEdgesToDraw = Math.min(graph.edges.length, 6000);
+  for (let i = 0; i < maxEdgesToDraw; i++) {
+    const e = graph.edges[i];
+    const k = e.u < e.v ? `${e.u}_${e.v}` : `${e.v}_${e.u}`;
+    if (mstSet.has(k)) continue;
+    const p1 = positions[e.u];
+    const p2 = positions[e.v];
+    if (p1 && p2) {
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+    }
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // 2. Desenha arestas da MST (destaque em verde esmeralda com brilho neon)
+  if (mstEdges && mstEdges.length > 0) {
+    ctx.save();
+    ctx.strokeStyle = '#10b981';
+    ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
+    ctx.shadowBlur = M <= 40 ? 10 : 4;
+    ctx.lineWidth = M <= 40 ? 3 : 2;
+    ctx.beginPath();
+    mstEdges.forEach(e => {
+      const p1 = positions[e.u];
+      const p2 = positions[e.v];
+      if (p1 && p2) {
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+      }
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 3. Desenha etiquetas de pesos em grafos pequenos
+  if (M <= 12 && graph.edges.length <= 25) {
+    ctx.save();
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    graph.edges.forEach(e => {
+      const k = e.u < e.v ? `${e.u}_${e.v}` : `${e.v}_${e.u}`;
+      const isMST = mstSet.has(k);
+      const p1 = positions[e.u];
+      const p2 = positions[e.v];
+      if (!p1 || !p2) return;
+      const mx = (p1.x + p2.x) / 2;
+      const my = (p1.y + p2.y) / 2;
+
+      ctx.fillStyle = isMST ? 'rgba(6, 78, 59, 0.95)' : 'rgba(15, 23, 42, 0.85)';
+      ctx.strokeStyle = isMST ? '#10b981' : 'rgba(255, 255, 255, 0.2)';
+      ctx.beginPath();
+      ctx.roundRect(mx - 10, my - 7, 20, 14, 3);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = isMST ? '#a7f3d0' : '#cbd5e1';
+      ctx.fillText(e.w, mx, my);
+    });
+    ctx.restore();
+  }
+
+  // 4. Desenha vértices
+  const nodeRadius = M <= 15 ? 13 : (M <= 35 ? 8 : (M <= 100 ? 5 : (M <= 400 ? 3 : 2)));
+  ctx.save();
+  for (let i = 0; i < M; i++) {
+    const p = positions[i];
+    if (!p) continue;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, nodeRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.lineWidth = M <= 35 ? 2 : 1;
+    ctx.strokeStyle = mstEdges ? '#10b981' : '#38bdf8';
+    ctx.stroke();
+
+    if (M <= 20) {
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(i, p.x, p.y + 0.5);
+    }
+  }
+  ctx.restore();
+
+  // Atualiza metadados e legendas
+  const metaEl = document.getElementById('bench-graph-meta');
+  if (metaEl) {
+    metaEl.textContent = `M = ${M.toLocaleString()} vértices | N = ${graph.edges.length.toLocaleString()} arestas`;
+  }
+  const mstLegend = document.getElementById('bench-mst-legend');
+  if (mstLegend) {
+    if (mstEdges) {
+      mstLegend.classList.remove('hidden');
+      mstLegend.classList.add('flex');
+    } else {
+      mstLegend.classList.remove('flex');
+      mstLegend.classList.add('hidden');
+    }
+  }
+}
+
+// Gera e atualiza o grafo em tela de forma reativa aos sliders
+function updateAndRenderGraph(keepMst = false) {
+  const sliderM = document.getElementById('bench-m');
+  const sliderN = document.getElementById('bench-n');
+  if (!sliderM || !sliderN) return;
+
+  const M = parseInt(sliderM.value, 10);
+  const N = parseInt(sliderN.value, 10);
+
+  cachedBenchmarkGraph = generateConnectedGraph(M, N);
+  if (!keepMst) {
+    currentMstEdges = null;
+  }
+  drawBenchmarkGraph(cachedBenchmarkGraph, currentMstEdges);
+}
+
+window.renderBenchmarkGraphOnTabSwitch = function() {
+  setTimeout(() => {
+    updateAndRenderGraph(currentMstEdges !== null);
+  }, 40);
+};
+
+window.addEventListener('resize', () => {
+  if (cachedBenchmarkGraph) {
+    drawBenchmarkGraph(cachedBenchmarkGraph, currentMstEdges);
+  }
+});
 
 // Min-Heap Binário em Array Flat (Equivalente ao std::priority_queue de C++)
 class FastMinHeap {
@@ -390,11 +621,14 @@ function executeSinglePrim(M, adj) {
 
 // Prim com amostragem múltipla (Multi-run) para eliminar ruído de microssegundos
 function runBenchmarkPrim(M, adj) {
-  // Para grafos pequenos (como M=7), executa múltiplas vezes para estabilizar o tempo
-  const iterations = M <= 20 ? 500 : (M <= 500 ? 5 : 3);
+  // Para grafos pequenos (como M=7), executa milhares de vezes para estabilizar medição do V8
+  const iterations = M <= 25 ? 5000 : (M <= 150 ? 800 : (M <= 600 ? 10 : 3));
 
-  // Warmup para otimização JIT do V8
-  executeSinglePrim(M, adj);
+  // Warmup para aquecer o motor JIT do V8 e compilação TurboFan
+  const warmup = M <= 25 ? 200 : 10;
+  for (let w = 0; w < warmup; w++) {
+    executeSinglePrim(M, adj);
+  }
 
   const start = performance.now();
   let lastRes = null;
@@ -424,6 +658,7 @@ function executeSingleKruskal(M, edges) {
   let edgesCount = 0;
   let dsuUnions = 0;
   let edgesEvaluated = 0;
+  const mstEdges = [];
 
   for (let i = 0; i < sorted.length; i++) {
     edgesEvaluated++;
@@ -432,19 +667,23 @@ function executeSingleKruskal(M, edges) {
       totalCost += e.w;
       edgesCount++;
       dsuUnions++;
+      mstEdges.push(e);
       if (edgesCount === M - 1) break;
     }
   }
 
-  return { totalCost, edgesCount, edgesEvaluated, dsuUnions };
+  return { totalCost, edgesCount, edgesEvaluated, dsuUnions, mstEdges };
 }
 
 // Kruskal com amostragem múltipla para estabilidade
 function runBenchmarkKruskal(M, edges) {
-  const iterations = M <= 20 ? 500 : (M <= 500 ? 5 : 3);
+  const iterations = M <= 25 ? 5000 : (M <= 150 ? 800 : (M <= 600 ? 10 : 3));
 
   // Warmup JIT
-  executeSingleKruskal(M, edges);
+  const warmup = M <= 25 ? 200 : 10;
+  for (let w = 0; w < warmup; w++) {
+    executeSingleKruskal(M, edges);
+  }
 
   const start = performance.now();
   let lastRes = null;
@@ -460,6 +699,7 @@ function runBenchmarkKruskal(M, edges) {
     mstCost: lastRes.totalCost,
     edgesInMST: lastRes.edgesCount,
     operations: lastRes.edgesEvaluated,
+    mstEdges: lastRes.mstEdges,
     detail: `${lastRes.edgesEvaluated.toLocaleString()} arestas testadas (${lastRes.dsuUnions} uniões)`
   };
 }
@@ -513,9 +753,19 @@ function setupBenchmarkUI() {
   }
 
   if (sliderM && sliderN) {
-    sliderM.addEventListener('input', updateSliderConstraints);
-    sliderN.addEventListener('input', updateSliderConstraints);
+    sliderM.addEventListener('input', () => {
+      updateSliderConstraints();
+      updateAndRenderGraph(false);
+    });
+    sliderN.addEventListener('input', () => {
+      updateSliderConstraints();
+      updateAndRenderGraph(false);
+    });
     updateSliderConstraints();
+    // Desenha o grafo inicial imediatamente
+    setTimeout(() => {
+      updateAndRenderGraph(false);
+    }, 50);
   }
 
   // Presets Rápidos
@@ -538,6 +788,7 @@ function setupBenchmarkUI() {
       sliderN.value = 90000;
     }
     updateSliderConstraints();
+    updateAndRenderGraph(false);
     executeLiveBenchmark();
   };
 
@@ -592,6 +843,7 @@ function setupBenchmarkUI() {
 
   window.randomizeGraphSeed = function() {
     currentSeedOffset = Math.floor(Math.random() * 1000000);
+    updateAndRenderGraph(false);
     executeLiveBenchmark();
   };
 
@@ -601,17 +853,101 @@ function setupBenchmarkUI() {
   }
 }
 
-// Execução do Benchmark Ao Vivo
+// Aplica os resultados na interface de forma estável e consistente
+function applyBenchmarkResults(data, graph) {
+  const { primRes, kruskalRes } = data;
+
+  const formatTime = (ms) => {
+    if (ms < 0.01) return `${(ms).toFixed(4)} ms`;
+    if (ms < 1.0) return `${(ms).toFixed(3)} ms`;
+    return `${(ms).toFixed(2)} ms`;
+  };
+
+  // Atualiza Cards de Resultados
+  document.getElementById('prim-time-val').textContent = formatTime(primRes.durationMs);
+  document.getElementById('prim-ops-val').textContent = primRes.detail;
+  document.getElementById('prim-cost-val').textContent = primRes.mstCost.toLocaleString();
+
+  document.getElementById('kruskal-time-val').textContent = formatTime(kruskalRes.durationMs);
+  document.getElementById('kruskal-ops-val').textContent = kruskalRes.detail;
+  document.getElementById('kruskal-cost-val').textContent = kruskalRes.mstCost.toLocaleString();
+
+  // Checagem de Equivalência
+  const eqBadge = document.getElementById('bench-equiv-badge');
+  if (primRes.mstCost === kruskalRes.mstCost) {
+    eqBadge.className = 'text-xs px-3 py-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 flex items-center gap-1.5 font-medium';
+    eqBadge.innerHTML = `✓ Ambos encontraram exatamente o mesmo Custo Mínimo ótimo: <strong class="text-white">${primRes.mstCost.toLocaleString()}</strong> (${primRes.edgesInMST} arestas)`;
+  } else {
+    eqBadge.className = 'text-xs px-3 py-1.5 rounded-lg bg-amber-950/80 text-amber-300 border border-amber-700/60 flex items-center gap-1.5';
+    eqBadge.innerHTML = `⚠️ Custos: Prim=${primRes.mstCost} vs Kruskal=${kruskalRes.mstCost}`;
+  }
+
+  // Vencedor e Análise Didática
+  const winnerBadge = document.getElementById('bench-winner-banner');
+  let winnerText = '';
+  let winnerBg = '';
+  const tP = Math.max(0.0001, primRes.durationMs);
+  const tK = Math.max(0.0001, kruskalRes.durationMs);
+
+  const diffRel = Math.abs(tP - tK) / Math.max(tP, tK);
+  if (diffRel < 0.08) {
+    winnerText = `🤝 EMPATE TÉCNICO! Desempenho equivalente (${formatTime(tK)} vs ${formatTime(tP)}).`;
+    winnerBg = 'from-slate-800 to-slate-900 border-slate-600 text-slate-200';
+  } else if (tK < tP) {
+    const ratio = (tP / tK).toFixed(1);
+    winnerText = `🏆 KRUSKAL VENCEU! Executou ${ratio}x mais rápido (${formatTime(tK)} vs ${formatTime(tP)} do Prim).`;
+    winnerBg = 'from-purple-900/50 to-purple-950/70 border-purple-600 text-purple-200';
+  } else {
+    const ratio = (tK / tP).toFixed(1);
+    winnerText = `🏆 PRIM VENCEU! Executou ${ratio}x mais rápido (${formatTime(tP)} vs ${formatTime(tK)} do Kruskal).`;
+    winnerBg = 'from-sky-900/50 to-sky-950/70 border-sky-600 text-sky-200';
+  }
+
+  if (winnerBadge) {
+    winnerBadge.className = `p-3 rounded-xl border bg-gradient-to-r ${winnerBg} font-bold text-sm text-center shadow-lg transition-all`;
+    winnerBadge.textContent = winnerText;
+  }
+
+  // Barras Visuais de Comparação
+  const maxTime = Math.max(tP, tK);
+  const primPct = Math.max(8, Math.round((tP / maxTime) * 100));
+  const kruskalPct = Math.max(8, Math.round((tK / maxTime) * 100));
+
+  const barPrim = document.getElementById('bench-bar-prim');
+  const barKruskal = document.getElementById('bench-bar-kruskal');
+  if (barPrim) barPrim.style.width = `${primPct}%`;
+  if (barKruskal) barKruskal.style.width = `${kruskalPct}%`;
+
+  // Desenha o grafo destacando a Árvore Geradora Mínima (MST) em verde
+  currentMstEdges = kruskalRes.mstEdges;
+  drawBenchmarkGraph(graph, currentMstEdges);
+
+  const statusEl = document.getElementById('bench-status-badge');
+  if (statusEl) {
+    statusEl.innerHTML = `✓ Execução concluída e estabilizada! MST destacada no grafo abaixo.`;
+    statusEl.className = 'text-xs font-semibold text-emerald-400';
+  }
+}
+
+// Execução do Benchmark Ao Vivo (Determinística com Cache por Grafo)
 function executeLiveBenchmark() {
   const sliderM = document.getElementById('bench-m');
   const sliderN = document.getElementById('bench-n');
   const statusEl = document.getElementById('bench-status-badge');
-  const winnerBadge = document.getElementById('bench-winner-banner');
 
   if (!sliderM || !sliderN) return;
 
   const M = parseInt(sliderM.value, 10);
   const N = parseInt(sliderN.value, 10);
+  const cacheKey = `${M}_${N}_${currentSeedOffset}`;
+
+  // Se o grafo atual já foi executado, restaura os resultados congelados exatos (sem oscilação de microssegundos!)
+  if (benchmarkCache.has(cacheKey)) {
+    const cached = benchmarkCache.get(cacheKey);
+    const graph = cachedBenchmarkGraph || generateConnectedGraph(M, N);
+    applyBenchmarkResults(cached, graph);
+    return;
+  }
 
   if (statusEl) {
     statusEl.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse mr-1"></span> Gerando Grafo conexo (${M} vértices, ${N} arestas)...`;
@@ -621,9 +957,10 @@ function executeLiveBenchmark() {
   // Execução via timeout para manter UI viva
   setTimeout(() => {
     const graph = generateConnectedGraph(M, N);
+    cachedBenchmarkGraph = graph;
 
     if (statusEl) {
-      statusEl.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse mr-1"></span> Executando Prim e Kruskal...`;
+      statusEl.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse mr-1"></span> Executando Prim e Kruskal (amostragem estabilizada)...`;
       statusEl.className = 'text-xs font-semibold text-sky-400';
     }
 
@@ -634,63 +971,10 @@ function executeLiveBenchmark() {
       // 2. Executa Prim
       const primRes = runBenchmarkPrim(graph.M, graph.adj);
 
-      // Atualiza Cards de Resultados
-      document.getElementById('prim-time-val').textContent = `${primRes.durationMs.toFixed(2)} ms`;
-      document.getElementById('prim-ops-val').textContent = primRes.detail;
-      document.getElementById('prim-cost-val').textContent = primRes.mstCost.toLocaleString();
+      const resultData = { primRes, kruskalRes };
+      benchmarkCache.set(cacheKey, resultData);
 
-      document.getElementById('kruskal-time-val').textContent = `${kruskalRes.durationMs.toFixed(2)} ms`;
-      document.getElementById('kruskal-ops-val').textContent = kruskalRes.detail;
-      document.getElementById('kruskal-cost-val').textContent = kruskalRes.mstCost.toLocaleString();
-
-      // Checagem de Equivalência
-      const eqBadge = document.getElementById('bench-equiv-badge');
-      if (primRes.mstCost === kruskalRes.mstCost) {
-        eqBadge.className = 'text-xs px-3 py-1.5 rounded-lg bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 flex items-center gap-1.5 font-medium';
-        eqBadge.innerHTML = `✓ Ambos encontraram exatamente o mesmo Custo Mínimo ótimo: <strong class="text-white">${primRes.mstCost.toLocaleString()}</strong> (${primRes.edgesInMST} arestas)`;
-      } else {
-        eqBadge.className = 'text-xs px-3 py-1.5 rounded-lg bg-amber-950/80 text-amber-300 border border-amber-700/60 flex items-center gap-1.5';
-        eqBadge.innerHTML = `⚠️ Custos: Prim=${primRes.mstCost} vs Kruskal=${kruskalRes.mstCost}`;
-      }
-
-      // Vencedor e Análise Didática
-      let winnerText = '';
-      let winnerBg = '';
-      const tP = Math.max(0.001, primRes.durationMs);
-      const tK = Math.max(0.001, kruskalRes.durationMs);
-
-      if (tK < tP) {
-        const ratio = (tP / tK).toFixed(1);
-        winnerText = `🏆 KRUSKAL VENCEU! Executou ${ratio}x mais rápido (${tK.toFixed(2)}ms vs ${tP.toFixed(2)}ms do Prim).`;
-        winnerBg = 'from-purple-900/50 to-purple-950/70 border-purple-600 text-purple-200';
-      } else if (tP < tK) {
-        const ratio = (tK / tP).toFixed(1);
-        winnerText = `🏆 PRIM VENCEU! Executou ${ratio}x mais rápido (${tP.toFixed(2)}ms vs ${tK.toFixed(2)}ms do Kruskal).`;
-        winnerBg = 'from-sky-900/50 to-sky-950/70 border-sky-600 text-sky-200';
-      } else {
-        winnerText = `🤝 EMPATE TÉCNICO! Ambos executaram em tempos equivalentes.`;
-        winnerBg = 'from-slate-800 to-slate-900 border-slate-600 text-slate-200';
-      }
-
-      if (winnerBadge) {
-        winnerBadge.className = `p-3 rounded-xl border bg-gradient-to-r ${winnerBg} font-bold text-sm text-center shadow-lg transition-all`;
-        winnerBadge.textContent = winnerText;
-      }
-
-      // Barras Visuais de Comparação
-      const maxTime = Math.max(tP, tK);
-      const primPct = Math.max(4, Math.round((tP / maxTime) * 100));
-      const kruskalPct = Math.max(4, Math.round((tK / maxTime) * 100));
-
-      const barPrim = document.getElementById('bench-bar-prim');
-      const barKruskal = document.getElementById('bench-bar-kruskal');
-      if (barPrim) barPrim.style.width = `${primPct}%`;
-      if (barKruskal) barKruskal.style.width = `${kruskalPct}%`;
-
-      if (statusEl) {
-        statusEl.innerHTML = `✓ Execução concluída com sucesso!`;
-        statusEl.className = 'text-xs font-semibold text-emerald-400';
-      }
+      applyBenchmarkResults(resultData, graph);
     }, 40);
   }, 20);
 }

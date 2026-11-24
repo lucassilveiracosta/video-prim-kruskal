@@ -402,6 +402,33 @@
           </div>
         </div>
 
+        <!-- Visualizador Interativo da Topologia do Grafo Selecionado -->
+        <div class="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-inner">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200">
+                Topologia do Grafo em Tempo Real
+              </h4>
+              <span id="bench-graph-meta" class="text-[11px] font-mono px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                M = 7 vértices | N = 12 arestas
+              </span>
+            </div>
+            <div id="bench-graph-legend" class="text-[11px] text-slate-400 flex items-center gap-3">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Vértices</span>
+              <span class="flex items-center gap-1.5"><span class="w-3.5 h-0.5 bg-slate-600 inline-block"></span> Arestas</span>
+              <span id="bench-mst-legend" class="hidden items-center gap-1.5 text-emerald-400 font-semibold"><span class="w-3.5 h-1 bg-emerald-500 rounded inline-block"></span> MST Destacada</span>
+            </div>
+          </div>
+          
+          <div class="w-full h-72 sm:h-80 bg-[#070b14] rounded-lg border border-slate-800/80 overflow-hidden relative shadow-inner">
+            <canvas id="bench-graph-canvas" class="w-full h-full block"></canvas>
+            <div id="bench-graph-overlay" class="absolute bottom-2 left-2 text-[10px] text-slate-400 bg-slate-950/80 px-2 py-1 rounded border border-slate-800">
+              💡 Arraste os sliders acima para ver o grafo mudar instantaneamente. Ao executar, a MST fica verde!
+            </div>
+          </div>
+        </div>
+
         <!-- Banner do Vencedor -->
         <div id="bench-winner-banner" class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 font-bold text-sm text-center text-slate-400 shadow-inner">
           Clique em "Executar Benchmark Ao Vivo" ou escolha um dos cenários acima para comparar.
@@ -578,6 +605,10 @@
         tabPrim.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
         tabKruskal.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
         tabBenchmark.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-amber-500 text-slate-950 font-bold shadow-sm flex items-center gap-1.5';
+
+        if (window.renderBenchmarkGraphOnTabSwitch) {
+          window.renderBenchmarkGraphOnTabSwitch();
+        }
       }
 
       tabPrim.addEventListener('click', () => {

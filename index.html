@@ -29,14 +29,15 @@
 
       <!-- Seletor de Algoritmo / Abas -->
       <div class="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700">
-        <button id="tab-prim" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-emerald-600 text-white shadow-sm">
+        <button id="tab-prim" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-emerald-600 text-white shadow-sm">
           1. Algoritmo de Prim
         </button>
-        <button id="tab-kruskal" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200">
+        <button id="tab-kruskal" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200">
           2. Algoritmo de Kruskal
         </button>
-        <button id="tab-compare" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200 hidden sm:block">
-          Comparativo Resumo
+        <button id="tab-benchmark" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-amber-400 hover:text-amber-200 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          3. Benchmark & Análise
         </button>
       </div>
 
@@ -51,184 +52,472 @@
   <!-- Conteúdo Principal -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-    <!-- Grid do Player de Vídeo e HUD -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- ========================================== -->
+    <!-- SEÇÃO 1: PLAYER DE VÍDEO (Abas 1 e 2)      -->
+    <!-- ========================================== -->
+    <div id="video-section" class="space-y-6">
       
-      <!-- Coluna da Esquerda: O Player de Vídeo (8 colunas) -->
-      <div class="lg:col-span-8 space-y-4">
+      <!-- Grid do Player de Vídeo e HUD -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Viewport do Vídeo 16:9 -->
-        <div class="video-viewport relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-          <canvas id="video-canvas" width="960" height="540"></canvas>
-        </div>
-
-        <!-- Barra de Controle do Vídeo (Estilo Player Profissional) -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 shadow-lg">
+        <!-- Coluna da Esquerda: O Player de Vídeo (8 colunas) -->
+        <div class="lg:col-span-8 space-y-4">
           
-          <!-- Linha do Tempo (Scrubber) -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-xs text-slate-400 font-mono">
-              <span id="time-readout">00:00 / 00:28</span>
-              <span id="step-readout" class="font-semibold text-emerald-400">Passo 1 de 14</span>
-            </div>
-            <input id="timeline-slider" type="range" min="0" max="13" value="0" class="video-scrubber w-full accent-emerald-500">
+          <!-- Viewport do Vídeo 16:9 -->
+          <div class="video-viewport relative bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+            <canvas id="video-canvas" width="960" height="540"></canvas>
           </div>
 
-          <!-- Botões de Controle e Opções de Reprodução -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <!-- Barra de Controle do Vídeo (Estilo Player Profissional) -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 shadow-lg">
             
-            <!-- Grupo Esquerdo: Navegação de Reprodução -->
-            <div class="flex items-center space-x-2">
-              <button id="btn-restart" title="Reiniciar do Início (R)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-              </button>
-
-              <button id="btn-prev" title="Passo Anterior (Seta Esquerda)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-              </button>
-
-              <button id="btn-play" class="flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition shadow-lg shadow-emerald-950">
-                <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-                <span class="hidden sm:inline">Reproduzir</span>
-              </button>
-
-              <button id="btn-next" title="Próximo Passo (Seta Direita)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </button>
-
-              <button id="btn-sound" title="Alternar Efeitos Sonoros" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition ml-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
-                </svg>
-              </button>
+            <!-- Linha do Tempo (Scrubber) -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs text-slate-400 font-mono">
+                <span id="time-readout">00:00 / 00:28</span>
+                <span id="step-readout" class="font-semibold text-emerald-400">Passo 1 de 14</span>
+              </div>
+              <input id="timeline-slider" type="range" min="0" max="13" value="0" class="video-scrubber w-full accent-emerald-500">
             </div>
 
-            <!-- Grupo Direito: Velocidade e Exportação de Vídeo -->
-            <div class="flex items-center space-x-3 text-xs">
+            <!-- Botões de Controle e Opções de Reprodução -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
               
-              <!-- Seletor de Velocidade -->
-              <div class="flex items-center space-x-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700">
-                <span class="text-slate-400">Velocidade:</span>
-                <select id="speed-select" class="bg-transparent text-emerald-400 font-semibold outline-none cursor-pointer">
-                  <option value="0.5" class="bg-slate-900 text-white">0.5x</option>
-                  <option value="1.0" selected class="bg-slate-900 text-white">1.0x</option>
-                  <option value="1.5" class="bg-slate-900 text-white">1.5x</option>
-                  <option value="2.0" class="bg-slate-900 text-white">2.0x</option>
-                </select>
+              <!-- Grupo Esquerdo: Navegação de Reprodução -->
+              <div class="flex items-center space-x-2">
+                <button id="btn-restart" title="Reiniciar do Início (R)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+
+                <button id="btn-prev" title="Passo Anterior (Seta Esquerda)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                  </svg>
+                </button>
+
+                <button id="btn-play" class="flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition shadow-lg shadow-emerald-950">
+                  <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <span class="hidden sm:inline">Reproduzir</span>
+                </button>
+
+                <button id="btn-next" title="Próximo Passo (Seta Direita)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+
+                <button id="btn-sound" title="Alternar Efeitos Sonoros" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition ml-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                  </svg>
+                </button>
               </div>
 
-              <!-- Botão de Gravação de Vídeo (.webm) -->
-              <button id="btn-record" title="Gravar e baixar vídeo WebM da animação" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition font-medium">
-                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                <span>Exportar Vídeo (.webm)</span>
-              </button>
+              <!-- Grupo Direito: Velocidade e Exportação de Vídeo -->
+              <div class="flex items-center space-x-3 text-xs">
+                
+                <!-- Seletor de Velocidade -->
+                <div class="flex items-center space-x-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-700">
+                  <span class="text-slate-400">Velocidade:</span>
+                  <select id="speed-select" class="bg-transparent text-emerald-400 font-semibold outline-none cursor-pointer">
+                    <option value="0.5" class="bg-slate-900 text-white">0.5x</option>
+                    <option value="1.0" selected class="bg-slate-900 text-white">1.0x</option>
+                    <option value="1.5" class="bg-slate-900 text-white">1.5x</option>
+                    <option value="2.0" class="bg-slate-900 text-white">2.0x</option>
+                  </select>
+                </div>
+
+                <!-- Botão de Gravação de Vídeo (.webm) -->
+                <button id="btn-record" title="Gravar e baixar vídeo WebM da animação" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition font-medium">
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                  <span>Exportar Vídeo (.webm)</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Legenda de Atalhos de Teclado -->
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800/60">
+              <span>Atalhos: <kbd class="px-1 py-0.5 rounded bg-slate-800 text-slate-300">Espaço</kbd> Play/Pause • <kbd class="px-1 py-0.5 rounded bg-slate-800 text-slate-300">←</kbd> <kbd class="px-1 py-0.5 rounded bg-slate-800 text-slate-300">→</kbd> Avançar/Voltar</span>
+              <span>Resolução do Vídeo: 16:9 HD (960x540)</span>
             </div>
 
           </div>
 
-          <!-- Legenda de Atalhos de Teclado -->
-          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800/60">
-            <span>Atalhos: <kbd class="px-1 py-0.5 rounded bg-slate-800 text-slate-300">Espaço</kbd> Play/Pause • <kbd class="px-1 py-0.5 rounded bg-slate-800 text-slate-300">←</kbd> <kbd class="px-1 py-0.5 rounded bg-slate-800 text-slate-300">→</kbd> Avançar/Voltar</span>
-            <span>Resolução do Vídeo: 16:9 HD (960x540)</span>
+        </div>
+
+        <!-- Coluna da Direita: Painel Informativo HUD (4 colunas) -->
+        <div class="lg:col-span-4 space-y-4">
+          
+          <!-- Bloco 1: Pseudocódigo Sincronizado -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
+                Pseudocódigo Sincronizado
+              </h3>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 font-mono">Em Execução</span>
+            </div>
+            <div id="code-container" class="space-y-0.5 font-mono text-xs max-h-52 overflow-y-auto pr-1">
+              <!-- Inserido dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Bloco 2: Estruturas de Dados em Tempo Real (Heap / DSU) -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                </svg>
+                Estruturas de Dados
+              </h3>
+              <span id="data-struct-badge" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">Live</span>
+            </div>
+            <div id="data-struct-container">
+              <!-- Inserido dinamicamente via JS -->
+            </div>
           </div>
 
         </div>
 
       </div>
 
-      <!-- Coluna da Direita: Painel Informativo HUD (4 colunas) -->
-      <div class="lg:col-span-4 space-y-4">
+      <!-- Seção Teórica e Comparativa (Cards Didáticos de PAA) -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
         
-        <!-- Bloco 1: Pseudocódigo Sincronizado -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
-          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-              </svg>
-              Pseudocódigo Sincronizado
-            </h3>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 font-mono">Em Execução</span>
+        <!-- Card Prim -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-sky-400">Algoritmo de Prim</h4>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">O(E log V)</span>
           </div>
-          <div id="code-container" class="space-y-0.5 font-mono text-xs max-h-52 overflow-y-auto pr-1">
-            <!-- Inserido dinamicamente via JS -->
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Cresce uma <strong class="text-sky-300">única árvore contígua</strong> a partir de uma raiz. A cada passo, avalia o corte $(S, V \setminus S)$ e escolhe a aresta de menor peso que atravessa a fronteira para fora da árvore.
+          </p>
+          <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+            <strong class="text-slate-300">Estrutura central:</strong> Fila de prioridade (Min-Heap) das arestas incidentes à fronteira.
           </div>
         </div>
 
-        <!-- Bloco 2: Estruturas de Dados em Tempo Real (Heap / DSU) -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
-          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+        <!-- Card Kruskal -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-purple-400">Algoritmo de Kruskal</h4>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">O(E log E)</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Ordena <strong class="text-purple-300">todas as arestas globalmente</strong> e cresce uma floresta de componentes desconexos. Arestas que conectam componentes distintos são unidas; arestas que formam ciclo são descartadas.
+          </p>
+          <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+            <strong class="text-slate-300">Estrutura central:</strong> Conjuntos Disjuntos (Union-Find / DSU com compressão de caminho).
+          </div>
+        </div>
+
+        <!-- Card Resultado Idêntico -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-emerald-400">Teorema da Escolha Gulosa</h4>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Custo Total = 18</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Apesar de trajetórias completamente distintas, ambos encontram a <strong class="text-emerald-300">mesma Árvore Geradora Mínima ótima</strong> com as 6 arestas: (E,G:1), (B,D:2), (A,D:3), (C,F:3), (E,F:4), (B,C:5).
+          </p>
+          <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+            <strong class="text-slate-300">Propriedade do Corte:</strong> Garante a otimalidade global em problemas gulosos de matroid.
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- SEÇÃO 2: BENCHMARK & ANÁLISE COMPARATIVA (Aba 3 - Beecrowd)     -->
+    <!-- ============================================================== -->
+    <div id="benchmark-section" class="hidden space-y-6">
+
+      <!-- 1. SLIDE DE APRESENTAÇÃO: ANÁLISE COMPARATIVA (Little Ice) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        
+        <!-- Header Estilizado do Slide -->
+        <div class="text-center pb-6 border-b border-slate-800">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-red-500/40 bg-red-950/20 text-red-400 font-bold tracking-widest text-xs uppercase mb-2">
+            <span>●</span> Little Ice <span>●</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-wider uppercase font-serif">
+            ANÁLISE COMPARATIVA
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Resumo Teórico e Prático das Submissões do Beecrowd 1764 (Itinerário do Papai Noel)
+          </p>
+        </div>
+
+        <!-- 3 Colunas Principais do Slide -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          
+          <!-- Coluna 1: Funcionamento -->
+          <div class="space-y-3 bg-slate-950/60 p-5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Funcionamento</h3>
+            </div>
+            <ul class="text-xs text-slate-300 space-y-2.5 leading-relaxed">
+              <li class="flex items-start gap-2">
+                <span class="text-purple-400 font-bold">•</span>
+                <span><strong class="text-purple-300">Kruskal:</strong> Foco nas arestas e ordenação global;</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-sky-400 font-bold">•</span>
+                <span><strong class="text-sky-300">Prim:</strong> Foco nos vértices, expansão gradual da árvore contígua.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Coluna 2: Custo -->
+          <div class="space-y-3 bg-slate-950/60 p-5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Custo de Complexidade</h3>
+            </div>
+            <div class="text-xs text-slate-300 space-y-2 leading-relaxed">
+              <div>
+                <strong class="text-purple-300">Kruskal:</strong>
+                <div class="font-mono text-[11px] text-purple-200 mt-0.5">Tempo → O(N log N) | Espaço → O(M + N)</div>
+              </div>
+              <div class="pt-1">
+                <strong class="text-sky-300">Prim (Modelo usado):</strong>
+                <div class="font-mono text-[11px] text-sky-200 mt-0.5">Tempo → O(N log M) | Espaço → O(M + N)</div>
+              </div>
+              <div class="text-[10px] text-slate-400 pt-1">
+                <em>*Nota Beecrowd: M = Cidades (Vértices), N = Estradas (Arestas)</em>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna 3: Qual usar? -->
+          <div class="space-y-3 bg-slate-950/60 p-5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Qual usar?</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              A decisão de qual algoritmo usar depende da forma que o grafo é fornecido e de sua densidade. O algoritmo de <strong>Kruskal se sai melhor em grafos esparsos</strong>, já o <strong>Prim se sai melhor em grafos densos</strong>.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Observação Inferior do Slide -->
+        <div class="mt-6 p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+          <span class="text-amber-400 font-bold">Obs.:</span> O custo do Algoritmo de Prim varia dependendo do modelo adotado, modelos com menor custo tendem a ter implementação mais complexa.
+          <div class="font-mono text-[11px] text-slate-400 mt-1 pl-4 border-l-2 border-amber-500/50">
+            Ex.: <span class="text-amber-300">O(M²)</span> em tempo e espaço com matriz de adjacência; <span class="text-sky-300">O(N log M)</span> com lista de adjacência e heap binário.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 2. BENCHMARK INTERATIVO AO VIVO -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+        
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
-              Estruturas de Dados
+              Execução de Benchmark em Tempo Real
             </h3>
-            <span id="data-struct-badge" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">Live</span>
+            <p class="text-xs text-slate-400">Execute e analise ao vivo durante a apresentação com diferentes portes e densidades de grafo</p>
           </div>
-          <div id="data-struct-container">
-            <!-- Inserido dinamicamente via JS -->
+          <span id="bench-status-badge" class="text-xs font-semibold text-slate-400">Pronto para executar</span>
+        </div>
+
+        <!-- Presets Rápidos de Demonstração -->
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+            Cenários Rápidos para Demonstração (1-Clique):
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <button onclick="setBenchmarkPreset('beecrowd')" class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-left transition">
+              <span class="text-[11px] font-bold text-emerald-400 block">Caso Beecrowd 1764</span>
+              <span class="text-[11px] text-slate-300 font-mono">M=7, N=12</span>
+            </button>
+            <button onclick="setBenchmarkPreset('sparse')" class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-purple-500/40 text-left transition">
+              <span class="text-[11px] font-bold text-purple-400 block">Grafo Esparso (Kruskal)</span>
+              <span class="text-[11px] text-slate-300 font-mono">M=2.500, N=5.000</span>
+            </button>
+            <button onclick="setBenchmarkPreset('medium')" class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-left transition">
+              <span class="text-[11px] font-bold text-sky-400 block">Grafo Médio</span>
+              <span class="text-[11px] text-slate-300 font-mono">M=1.200, N=20.000</span>
+            </button>
+            <button onclick="setBenchmarkPreset('dense')" class="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-sky-500/40 text-left transition">
+              <span class="text-[11px] font-bold text-sky-400 block">Grafo Denso (Prim)</span>
+              <span class="text-[11px] text-slate-300 font-mono">M=700, N=90.000</span>
+            </button>
           </div>
+        </div>
+
+        <!-- Sliders Customizados -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400">Vértices / Cidades (M):</span>
+              <span id="bench-m-val" class="font-mono font-bold text-white">7</span>
+            </div>
+            <input id="bench-m" type="range" min="5" max="3000" value="7" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400">Arestas / Estradas (N):</span>
+              <span id="bench-n-val" class="font-mono font-bold text-white">12</span>
+            </div>
+            <input id="bench-n" type="range" min="4" max="150000" value="12" class="w-full accent-amber-500 cursor-pointer">
+          </div>
+
+          <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
+            <span id="bench-density-badge" class="text-xs font-mono px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+              Densidade: Calculando...
+            </span>
+            <div class="flex items-center gap-2">
+              <button id="bench-run-btn" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-amber-950">
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span>Executar Benchmark Ao Vivo</span>
+              </button>
+              <button id="bench-batch-btn" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700">
+                ⚡ Bateria de Densidades
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner do Vencedor -->
+        <div id="bench-winner-banner" class="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 font-bold text-sm text-center text-slate-400 shadow-inner">
+          Clique em "Executar Benchmark Ao Vivo" ou escolha um dos cenários acima para comparar.
+        </div>
+
+        <!-- Barras de Comparação Visual de Tempo -->
+        <div class="space-y-2 p-4 rounded-xl bg-slate-950/40 border border-slate-800/60">
+          <div class="flex justify-between text-xs text-slate-400">
+            <span>Tempo de Execução Relativo (ms)</span>
+            <span class="text-[11px] text-slate-500">Menor barra = Mais rápido</span>
+          </div>
+          
+          <div class="space-y-2">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-sky-400 font-semibold">Prim O(N log M)</span>
+                <span id="prim-time-val" class="font-mono text-slate-200">-</span>
+              </div>
+              <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                <div id="bench-bar-prim" class="bg-sky-500 h-full rounded-full transition-all duration-300" style="width: 50%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-purple-400 font-semibold">Kruskal O(N log N)</span>
+                <span id="kruskal-time-val" class="font-mono text-slate-200">-</span>
+              </div>
+              <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                <div id="bench-bar-kruskal" class="bg-purple-500 h-full rounded-full transition-all duration-300" style="width: 50%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cards Detalhados de Métricas -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- Prim Details -->
+          <div class="p-4 rounded-xl bg-slate-950/80 border border-sky-500/30 space-y-2.5">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span class="text-xs font-bold text-sky-400 uppercase tracking-wider">Algoritmo de Prim</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">Min-Heap</span>
+            </div>
+            <div class="space-y-1 text-xs">
+              <div class="flex justify-between"><span class="text-slate-400">Custo MST:</span> <span id="prim-cost-val" class="font-mono font-bold text-white">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Operações Heap:</span> <span id="prim-ops-val" class="font-mono text-slate-300">-</span></div>
+            </div>
+          </div>
+
+          <!-- Kruskal Details -->
+          <div class="p-4 rounded-xl bg-slate-950/80 border border-purple-500/30 space-y-2.5">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span class="text-xs font-bold text-purple-400 uppercase tracking-wider">Algoritmo de Kruskal</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">Sort + DSU</span>
+            </div>
+            <div class="space-y-1 text-xs">
+              <div class="flex justify-between"><span class="text-slate-400">Custo MST:</span> <span id="kruskal-cost-val" class="font-mono font-bold text-white">-</span></div>
+              <div class="flex justify-between"><span class="text-slate-400">Operações DSU:</span> <span id="kruskal-ops-val" class="font-mono text-slate-300">-</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Badge de Equivalência -->
+        <div id="bench-equiv-badge" class="text-xs p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-center">
+          Os custos das duas Árvores Geradoras Mínimas serão comparados aqui.
+        </div>
+
+        <!-- Container de Resultados da Bateria Automática -->
+        <div id="bench-batch-results" class="empty:hidden"></div>
+
+      </div>
+
+      <!-- 3. SUBMISSÕES OFICIAIS DO BEECROWD 1764 (Imagens 1 e 2) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-xs font-mono">beecrowd</span>
+              Submissões Oficiais Aceitas (Accepted)
+            </h3>
+            <p class="text-xs text-slate-400">Problema 1764 - Itinerário do Papai Noel • C++20 com O2</p>
+          </div>
+
+          <!-- Seletor do Código a Exibir -->
+          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button id="code-tab-prim" onclick="showBeecrowdCode('prim')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white transition">
+              Prim (#50526552)
+            </button>
+            <button id="code-tab-kruskal" onclick="showBeecrowdCode('kruskal')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 transition">
+              Kruskal (#50526538)
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadados da Submissão Selecionada -->
+        <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">Accepted</span>
+            <span id="beecrowd-code-title" class="font-semibold text-white">Submissão #50526552 - PRIM</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="beecrowd-sub-badge" class="text-slate-400 font-mono text-[11px]">Tempo: 0.000s | Tamanho: 1,08 KB</span>
+            <button id="copy-code-btn" onclick="copyBeecrowdCode()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+              Copiar Código C++
+            </button>
+          </div>
+        </div>
+
+        <!-- Bloco de Código Fonte -->
+        <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-[#0d1117]">
+          <pre class="p-4 text-xs font-mono text-slate-300 overflow-x-auto max-h-96 leading-relaxed selection:bg-sky-500 selection:text-white"><code id="beecrowd-code-display">// Carregando código...</code></pre>
         </div>
 
       </div>
 
     </div>
-
-    <!-- Seção Teórica e Comparativa (Cards Didáticos de PAA) -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-      
-      <!-- Card Prim -->
-      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-bold text-sky-400">Algoritmo de Prim</h4>
-          <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">O(E log V)</span>
-        </div>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Cresce uma <strong class="text-sky-300">única árvore contígua</strong> a partir de uma raiz. A cada passo, avalia o corte $(S, V \setminus S)$ e escolhe a aresta de menor peso que atravessa a fronteira para fora da árvore.
-        </p>
-        <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
-          <strong class="text-slate-300">Estrutura central:</strong> Fila de prioridade (Min-Heap) das arestas incidentes à fronteira.
-        </div>
-      </div>
-
-      <!-- Card Kruskal -->
-      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-bold text-purple-400">Algoritmo de Kruskal</h4>
-          <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">O(E log E)</span>
-        </div>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Ordena <strong class="text-purple-300">todas as arestas globalmente</strong> e cresce uma floresta de componentes desconexos. Arestas que conectam componentes distintos são unidas; arestas que formam ciclo são descartadas.
-        </p>
-        <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
-          <strong class="text-slate-300">Estrutura central:</strong> Conjuntos Disjuntos (Union-Find / DSU com compressão de caminho).
-        </div>
-      </div>
-
-      <!-- Card Resultado Idêntico -->
-      <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-bold text-emerald-400">Teorema da Escolha Gulosa</h4>
-          <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Custo Total = 18</span>
-        </div>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Apesar de trajetórias completamente distintas, ambos encontram a <strong class="text-emerald-300">mesma Árvore Geradora Mínima ótima</strong> com as 6 arestas: (E,G:1), (B,D:2), (A,D:3), (C,F:3), (E,F:4), (B,C:5).
-        </p>
-        <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
-          <strong class="text-slate-300">Propriedade do Corte:</strong> Garante a otimalidade global em problemas gulosos de matroid.
-        </div>
-      </div>
-
-    </section>
 
   </main>
 
@@ -240,6 +529,7 @@
   <script src="kruskal-engine.js"></script>
   <script src="renderer.js"></script>
   <script src="player.js"></script>
+  <script src="benchmark.js"></script>
 
   <script>
     // Inicialização da Aplicação
@@ -263,31 +553,47 @@
         dataStructContainer: document.getElementById('data-struct-container')
       });
 
-      // Abas de Troca de Algoritmo
+      // Seções e Abas
+      const videoSection = document.getElementById('video-section');
+      const benchmarkSection = document.getElementById('benchmark-section');
+
       const tabPrim = document.getElementById('tab-prim');
       const tabKruskal = document.getElementById('tab-kruskal');
-      const tabCompare = document.getElementById('tab-compare');
+      const tabBenchmark = document.getElementById('tab-benchmark');
+
+      function showVideoView() {
+        videoSection.classList.remove('hidden');
+        benchmarkSection.classList.add('hidden');
+        tabBenchmark.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-amber-400 hover:text-amber-200 flex items-center gap-1.5';
+      }
+
+      function showBenchmarkView() {
+        player.pause();
+        videoSection.classList.add('hidden');
+        benchmarkSection.classList.remove('hidden');
+
+        tabPrim.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
+        tabKruskal.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
+        tabBenchmark.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-amber-500 text-slate-950 font-bold shadow-sm flex items-center gap-1.5';
+      }
 
       tabPrim.addEventListener('click', () => {
-        tabPrim.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-emerald-600 text-white shadow-sm';
-        tabKruskal.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
-        if (tabCompare) tabCompare.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200 hidden sm:block';
+        showVideoView();
+        tabPrim.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-emerald-600 text-white shadow-sm';
+        tabKruskal.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
         player.loadAlgorithm('prim');
       });
 
       tabKruskal.addEventListener('click', () => {
-        tabKruskal.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-purple-600 text-white shadow-sm';
-        tabPrim.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
-        if (tabCompare) tabCompare.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200 hidden sm:block';
+        showVideoView();
+        tabKruskal.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-purple-600 text-white shadow-sm';
+        tabPrim.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200';
         player.loadAlgorithm('kruskal');
       });
 
-      if (tabCompare) {
-        tabCompare.addEventListener('click', () => {
-          window.location.hash = '#comparativo';
-          alert('Dica: Ambos os algoritmos foram projetados sobre a mesma topologia de 7 vértices e 12 arestas. Experimente reproduzir o Prim (que cresce continuamente uma única árvore a partir de A) e depois o Kruskal (que une componentes isoladas pela ordem de peso), comprovando que ambos chegam exatamente ao custo mínimo 18!');
-        });
-      }
+      tabBenchmark.addEventListener('click', () => {
+        showBenchmarkView();
+      });
     });
   </script>
 </body>

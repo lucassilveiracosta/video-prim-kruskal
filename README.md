@@ -71,6 +71,26 @@ Ambos os algoritmos rodam sobre a **mesma topologia**, permitindo comparar visua
 
 ---
 
+## ⚡ Nova Aba: Benchmark & Apresentação (Beecrowd 1764)
+
+Adicionada uma aba dedicada à apresentação e análise comparativa de desempenho prático com base no problema **1764 - Itinerário do Papai Noel** do **Beecrowd**:
+
+- **Submissões Reais Aceitas:**
+  - **Prim (#50526552):** C++20 (`-O2`), tempo `0.000s`, tamanho `1,08 KB`. Implementado com lista de adjacência e `priority_queue` (Min-Heap).
+  - **Kruskal (#50526538):** C++20 (`-O2`), tempo `0.000s`, tamanho `3,45 KB`. Implementado com ordenação de arestas e `DSU` (*Path Compression* + *Union by Rank*).
+- **Slide Interativo ("ANÁLISE COMPARATIVA - Little Ice"):**
+  - **Funcionamento:** Kruskal (foco nas arestas e ordenação) vs Prim (foco nos vértices e expansão gradual).
+  - **Complexidade:** Kruskal $O(N \log N)$ em tempo e $O(M + N)$ em espaço vs Prim $O(N \log M)$ em tempo e $O(M + N)$ em espaço (*onde $M$ = cidades/vértices e $N$ = estradas/arestas*).
+  - **Obs. de Implementação:** Prim com matriz de adjacência tem custo $O(M^2)$ em tempo e espaço; com lista e heap binário tem custo $O(N \log M)$.
+  - **Qual Usar:** Kruskal vence em grafos esparsos; Prim vence em grafos densos.
+- **Suite de Execução ao Vivo:**
+  - Presets de 1-clique para demonstração ao vivo para o professor/turma (Beecrowd 1764, Grafo Esparso, Grafo Médio e Grafo Denso).
+  - Sliders para customizar $M$ (vértices) e $N$ (arestas) em tempo real com cálculo dinâmico da densidade percentual.
+  - Cronometragem real em microssegundos com `performance.now()`, barras comparativas proporcionais e validação de equivalência da MST.
+  - Bateria automatizada testando 5 níveis de densidade (0.5% a 60%) com tabela comparativa ao vivo.
+
+---
+
 ## 🧠 Análise Teórica dos Algoritmos (PAA)
 
 | Critério | Algoritmo de Prim | Algoritmo de Kruskal |
@@ -79,8 +99,8 @@ Ambos os algoritmos rodam sobre a **mesma topologia**, permitindo comparar visua
 | **Critério de Seleção** | Menor aresta que cruza a fronteira do corte $(S, V \setminus S)$ | Menor aresta global que conecta componentes distintos |
 | **Prevenção de Ciclos** | Garante que o outro extremo da aresta ainda não pertença a $S$ | Utiliza `FIND-SET(u) ≠ FIND-SET(v)` via Union-Find |
 | **Estrutura de Dados** | Fila de Prioridade (Min-Heap binário ou Fibonacci) | Conjuntos Disjuntos (Disjoint-Set Union / DSU com *Path Compression*) |
-| **Complexidade de Tempo** | $O(E \log V)$ com heap binário | $O(E \log E)$ (dominado pela ordenação das arestas) |
-| **Melhor Desempenho** | Grafos densos ($E \approx V^2$) | Grafos esparsos ($E \ll V^2$) |
+| **Complexidade de Tempo** | $O(N \log M)$ ou $O(E \log V)$ com heap binário | $O(N \log N)$ ou $O(E \log E)$ (dominado pela ordenação) |
+| **Melhor Desempenho** | Grafos densos ($N \approx M^2$) | Grafos esparsos ($N \approx M$) |
 
 ---
 
@@ -89,10 +109,11 @@ Ambos os algoritmos rodam sobre a **mesma topologia**, permitindo comparar visua
 ```
 video-exec/
 │
-├── index.html          # Aplicação principal unificada com abas e player
+├── index.html          # Aplicação principal unificada (Abas Prim, Kruskal e Benchmark)
 ├── prim.html           # Página individual do vídeo do Algoritmo de Prim
 ├── kruskal.html        # Página individual do vídeo do Algoritmo de Kruskal
 │
+├── benchmark.js        # Motor de benchmark ao vivo e submissões Beecrowd 1764
 ├── graph-data.js       # Definição dos nós, arestas, coordenadas e paleta
 ├── prim-engine.js      # Geração dos passos de execução de Prim
 ├── kruskal-engine.js   # Geração dos passos de execução de Kruskal + DSU

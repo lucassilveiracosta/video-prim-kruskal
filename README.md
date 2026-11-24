@@ -78,7 +78,7 @@ Adicionada uma aba dedicada à apresentação e análise comparativa de desempen
 - **Submissões Reais Aceitas:**
   - **Prim (#50526552):** C++20 (`-O2`), tempo `0.000s`, tamanho `1,08 KB`. Implementado com lista de adjacência e `priority_queue` (Min-Heap).
   - **Kruskal (#50526538):** C++20 (`-O2`), tempo `0.000s`, tamanho `3,45 KB`. Implementado com ordenação de arestas e `DSU` (*Path Compression* + *Union by Rank*).
-- **Slide Interativo ("ANÁLISE COMPARATIVA - Little Ice"):**
+- **Slide Interativo ("ANÁLISE COMPARATIVA"):**
   - **Funcionamento:** Kruskal (foco nas arestas e ordenação) vs Prim (foco nos vértices e expansão gradual).
   - **Complexidade:** Kruskal $O(N \log N)$ em tempo e $O(M + N)$ em espaço vs Prim $O(N \log M)$ em tempo e $O(M + N)$ em espaço (*onde $M$ = cidades/vértices e $N$ = estradas/arestas*).
   - **Obs. de Implementação:** Prim com matriz de adjacência tem custo $O(M^2)$ em tempo e espaço; com lista e heap binário tem custo $O(N \log M)$.

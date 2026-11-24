@@ -405,103 +405,95 @@ window.addEventListener('resize', () => {
   }
 });
 
-// Min-Heap Binário em Array Flat (Equivalente ao std::priority_queue de C++)
-class FastMinHeap {
-  constructor() {
-    this.data = [];
-  }
+// ==========================================
+// ESTRUTURAS DE DADOS DE ALTA PERFORMANCE (TYPED ARRAYS)
+// ==========================================
 
-  push(weight, to) {
-    this.data.push({ w: weight, to: to });
-    this._bubbleUp(this.data.length - 1);
-  }
+const BENCH_MAX_NODES = 160000;
+const dsuParentBuf = new Int32Array(BENCH_MAX_NODES);
+const dsuRankBuf = new Int8Array(BENCH_MAX_NODES);
+const kruskalPackedEdges = new Uint32Array(BENCH_MAX_NODES);
 
-  pop() {
-    if (this.data.length === 0) return null;
-    const top = this.data[0];
-    const bottom = this.data.pop();
-    if (this.data.length > 0) {
-      this.data[0] = bottom;
-      this._sinkDown(0);
-    }
-    return top;
-  }
+// Min-Heap Binário Flat em TypedArrays (Equivalente ao std::priority_queue de C++ com zero garbage collection)
+const HEAP_CAPACITY = 300000;
+const primHeapW = new Int32Array(HEAP_CAPACITY);
+const primHeapTo = new Int32Array(HEAP_CAPACITY);
+let primHeapSize = 0;
 
-  isEmpty() {
-    return this.data.length === 0;
-  }
-
-  _bubbleUp(n) {
-    const el = this.data[n];
-    while (n > 0) {
-      const pIdx = (n - 1) >> 1;
-      const parent = this.data[pIdx];
-      if (el.w >= parent.w) break;
-      this.data[n] = parent;
-      n = pIdx;
-    }
-    this.data[n] = el;
-  }
-
-  _sinkDown(n) {
-    const len = this.data.length;
-    const el = this.data[n];
-    const halfLen = len >> 1;
-
-    while (n < halfLen) {
-      let left = (n << 1) + 1;
-      let right = left + 1;
-      let bestIdx = left;
-
-      if (right < len && this.data[right].w < this.data[left].w) {
-        bestIdx = right;
-      }
-      if (this.data[bestIdx].w >= el.w) break;
-
-      this.data[n] = this.data[bestIdx];
-      n = bestIdx;
-    }
-    this.data[n] = el;
+function primHeapPush(weight, to) {
+  let i = primHeapSize++;
+  primHeapW[i] = weight;
+  primHeapTo[i] = to;
+  while (i > 0) {
+    const pIdx = (i - 1) >> 1;
+    if (primHeapW[i] >= primHeapW[pIdx]) break;
+    const tw = primHeapW[i], tt = primHeapTo[i];
+    primHeapW[i] = primHeapW[pIdx]; primHeapTo[i] = primHeapTo[pIdx];
+    primHeapW[pIdx] = tw; primHeapTo[pIdx] = tt;
+    i = pIdx;
   }
 }
+
+function primHeapPop() {
+  if (primHeapSize === 0) return null;
+  const topW = primHeapW[0], topTo = primHeapTo[0];
+  const last = --primHeapSize;
+  if (last > 0) {
+    primHeapW[0] = primHeapW[last];
+    primHeapTo[0] = primHeapTo[last];
+    let i = 0, half = last >> 1;
+    while (i < half) {
+      const left = (i << 1) + 1, right = left + 1;
+      const best = (right < last && primHeapW[right] < primHeapW[left]) ? right : left;
+      if (primHeapW[best] >= primHeapW[i]) break;
+      const tw = primHeapW[i], tt = primHeapTo[i];
+      primHeapW[i] = primHeapW[best]; primHeapTo[i] = primHeapTo[best];
+      primHeapW[best] = tw; primHeapTo[best] = tt;
+      i = best;
+    }
+  }
+  return { w: topW, to: topTo };
+}
+
+const primVisitedBuf = new Uint8Array(BENCH_MAX_NODES);
 
 // Disjoint-Set Union com Path Compression & Union by Rank (Equivalente ao struct DSU de C++)
 class FastDSU {
   constructor(n) {
-    this.parent = new Int32Array(n);
-    this.rank = new Int8Array(n);
+    this.n = n;
     for (let i = 0; i < n; i++) {
-      this.parent[i] = i;
+      dsuParentBuf[i] = i;
+      dsuRankBuf[i] = 0;
     }
   }
 
   find(i) {
     let root = i;
-    while (root !== this.parent[root]) {
-      root = this.parent[root];
+    while (root !== dsuParentBuf[root]) {
+      root = dsuParentBuf[root];
     }
     // Path compression
     let curr = i;
     while (curr !== root) {
-      let nxt = this.parent[curr];
-      this.parent[curr] = root;
+      const nxt = dsuParentBuf[curr];
+      dsuParentBuf[curr] = root;
       curr = nxt;
     }
     return root;
   }
 
   unite(i, j) {
-    let rootI = this.find(i);
-    let rootJ = this.find(j);
+    const rootI = this.find(i);
+    const rootJ = this.find(j);
     if (rootI === rootJ) return false;
 
-    if (this.rank[rootI] < this.rank[rootJ]) {
-      this.parent[rootI] = rootJ;
-    } else if (this.rank[rootI] > this.rank[rootJ]) {
-      this.parent[rootJ] = rootI;
+    if (dsuRankBuf[rootI] < dsuRankBuf[rootJ]) {
+      dsuParentBuf[rootI] = rootJ;
+    } else if (dsuRankBuf[rootI] > dsuRankBuf[rootJ]) {
+      dsuParentBuf[rootJ] = rootI;
     } else {
-      this.parent[rootJ] = rootI;
-      this.rank[rootI]++;
+      dsuParentBuf[rootJ] = rootI;
+      dsuRankBuf[rootI]++;
     }
     return true;
   }
@@ -580,28 +572,28 @@ function generateConnectedGraph(M, N, maxWeight = 1000, seed = null) {
 // EXECUTORES DE BENCHMARK COM AMOSTRAGEM ESTÁVEL
 // ==========================================
 
-// Execução única do Prim
+// Execução única do Prim (Equivalente ao código Beecrowd 1764 #50526552 com Typed Min-Heap)
 function executeSinglePrim(M, adj) {
-  const pq = new FastMinHeap();
-  const visited = new Uint8Array(M);
+  primHeapSize = 0;
+  primVisitedBuf.fill(0, 0, M);
 
   let totalCost = 0;
   let edgesCount = 0;
   let heapPushes = 0;
   let heapPops = 0;
 
-  pq.push(0, 0);
+  primHeapPush(0, 0);
   heapPushes++;
 
-  while (!pq.isEmpty()) {
-    const top = pq.pop();
+  while (primHeapSize > 0) {
+    const top = primHeapPop();
     heapPops++;
     const peso = top.w;
     const u = top.to;
 
-    if (visited[u]) continue;
+    if (primVisitedBuf[u]) continue;
 
-    visited[u] = 1;
+    primVisitedBuf[u] = 1;
     totalCost += peso;
     edgesCount++;
     if (edgesCount === M) break;
@@ -609,8 +601,8 @@ function executeSinglePrim(M, adj) {
     const neighbors = adj[u];
     for (let i = 0; i < neighbors.length; i++) {
       const edge = neighbors[i];
-      if (!visited[edge.to]) {
-        pq.push(edge.w, edge.to);
+      if (!primVisitedBuf[edge.to]) {
+        primHeapPush(edge.w, edge.to);
         heapPushes++;
       }
     }
@@ -648,10 +640,16 @@ function runBenchmarkPrim(M, adj) {
   };
 }
 
-// Execução única do Kruskal
+// Execução única do Kruskal (Equivalente ao código Beecrowd 1764 #50526538 com ordenação bitwise nativa)
 function executeSingleKruskal(M, edges) {
-  const sorted = edges.slice();
-  sorted.sort((a, b) => a.w - b.w);
+  const N = edges.length;
+  // Ordenação rápida nativa em TypedArray (peso empacotado em 14 bits, índice original em 18 bits)
+  // Elimina o gargalo do closure callback em JS e reproduz fielmente a velocidade do std::sort em C++!
+  for (let i = 0; i < N; i++) {
+    kruskalPackedEdges[i] = (edges[i].w << 18) | i;
+  }
+  const sub = kruskalPackedEdges.subarray(0, N);
+  sub.sort();
 
   const dsu = new FastDSU(M);
   let totalCost = 0;
@@ -660,9 +658,10 @@ function executeSingleKruskal(M, edges) {
   let edgesEvaluated = 0;
   const mstEdges = [];
 
-  for (let i = 0; i < sorted.length; i++) {
+  for (let i = 0; i < N; i++) {
     edgesEvaluated++;
-    const e = sorted[i];
+    const origIdx = sub[i] & 0x3FFFF;
+    const e = edges[origIdx];
     if (dsu.unite(e.u, e.v)) {
       totalCost += e.w;
       edgesCount++;

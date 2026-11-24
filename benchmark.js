@@ -20,15 +20,14 @@ const BEECROWD_CODES = {
 
 using namespace std;
 
-// pair<peso, vertice_destino>
 typedef pair<int, int> pii;
 
 int main() {
-    // Otimização de I/O em C++
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
-    int M, N; // M = cidades (vértices), N = estradas (arestas)
+    int M, N;
+
     while (cin >> M >> N && (M != 0 || N != 0)) {
         vector<vector<pii>> adj(M);
 
@@ -39,38 +38,36 @@ int main() {
             adj[Y].push_back({Z, X});
         }
 
-        // Min-Heap de pares (peso, vertice)
         priority_queue<pii, vector<pii>, greater<pii>> pq;
-        vector<bool> visited(M, false);
+        vector<bool> visitado(M, false);
 
-        int total_cost = 0;
-        int edges_count = 0;
+        long long custo_total = 0;
 
-        // Inicia a árvore pelo vértice 0
-        visited[0] = true;
-        for (auto& edge : adj[0]) {
-            pq.push(edge);
-        }
+        pq.push({0, 0});
 
-        // Expansão gradual da árvore até cobrir todos os M vértices
-        while (!pq.empty() && edges_count < M - 1) {
-            auto [weight, u] = pq.top();
+        while (!pq.empty()) {
+            int peso = pq.top().first;
+            int u = pq.top().second;
             pq.pop();
 
-            if (visited[u]) continue;
+            if (visitado[u]) {
+                continue;
+            }
 
-            visited[u] = true;
-            total_cost += weight;
-            edges_count++;
+            visitado[u] = true;
+            custo_total += peso;
 
-            for (auto& edge : adj[u]) {
-                if (!visited[edge.second]) {
-                    pq.push(edge);
+            for (auto& aresta : adj[u]) {
+                int peso_vizinho = aresta.first;
+                int v = aresta.second;
+
+                if (!visitado[v]) {
+                    pq.push({peso_vizinho, v});
                 }
             }
         }
 
-        cout << total_cost << "\\n";
+        cout << custo_total << "\\n";
     }
 
     return 0;
@@ -345,24 +342,22 @@ function runBenchmarkPrim(M, adj) {
   let heapPushes = 0;
   let heapPops = 0;
 
-  // Inicia no vértice 0
-  visited[0] = 1;
-  const adj0 = adj[0];
-  for (let i = 0; i < adj0.length; i++) {
-    pq.push(adj0[i].w, adj0[i].to);
-    heapPushes++;
-  }
+  // Inicia com {peso: 0, vértice: 0} como no código C++
+  pq.push(0, 0);
+  heapPushes++;
 
-  while (!pq.isEmpty() && edgesCount < M - 1) {
+  while (!pq.isEmpty()) {
     const top = pq.pop();
     heapPops++;
+    const peso = top.w;
     const u = top.to;
 
     if (visited[u]) continue;
 
     visited[u] = 1;
-    totalCost += top.w;
+    totalCost += peso;
     edgesCount++;
+    if (edgesCount === M) break; // Todos os M vértices alcançados
 
     const neighbors = adj[u];
     for (let i = 0; i < neighbors.length; i++) {
@@ -380,7 +375,7 @@ function runBenchmarkPrim(M, adj) {
     algorithm: 'Prim',
     durationMs: durationMs,
     mstCost: totalCost,
-    edgesInMST: edgesCount,
+    edgesInMST: edgesCount - 1,
     operations: heapPushes + heapPops,
     detail: `${heapPushes.toLocaleString()} pushes / ${heapPops.toLocaleString()} pops`
   };

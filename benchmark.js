@@ -277,10 +277,28 @@ class FastDSU {
 }
 
 // ==========================================
-// GERADOR DE GRAFOS DE TESTE PONDERADOS
+// GERADOR DE GRAFOS DETERMINÍSTICO (PRNG COM SEED)
 // ==========================================
 
-function generateConnectedGraph(M, N, maxWeight = 1000) {
+let currentSeedOffset = 42;
+
+// Gerador Pseudo-Aleatório Rápido de 32 bits (Mulberry32)
+// Garante que o mesmo grafo seja gerado para os mesmos M e N,
+// eliminando variações aleatórias indesejadas a cada clique!
+function createPrng(seed) {
+  let s = (seed + 0x6D2B79F5) | 0;
+  return function() {
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    s = (s + 0x6D2B79F5) | 0;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateConnectedGraph(M, N, maxWeight = 1000, seed = null) {
+  const finalSeed = seed !== null ? seed : ((M * 73856093) ^ (N * 19349663) ^ currentSeedOffset) >>> 0;
+  const rand = createPrng(finalSeed);
+
   const maxPossible = Math.floor((M * (M - 1)) / 2);
   const targetN = Math.max(M - 1, Math.min(N, maxPossible));
 
@@ -292,10 +310,10 @@ function generateConnectedGraph(M, N, maxWeight = 1000) {
     return u < v ? `${u}_${v}` : `${v}_${u}`;
   }
 
-  // 1. Gera árvore geradora aleatória para garantir conectividade
+  // 1. Gera árvore geradora aleatória com seed para garantir conectividade
   for (let i = 1; i < M; i++) {
-    const parent = Math.floor(Math.random() * i);
-    const w = Math.floor(Math.random() * maxWeight) + 1;
+    const parent = Math.floor(rand() * i);
+    const w = Math.floor(rand() * maxWeight) + 1;
     edges.push({ u: parent, v: i, w });
     adj[parent].push({ to: i, w });
     adj[i].push({ to: parent, w });
@@ -309,14 +327,14 @@ function generateConnectedGraph(M, N, maxWeight = 1000) {
 
   while (remaining > 0 && attempts < maxAttempts) {
     attempts++;
-    const u = Math.floor(Math.random() * M);
-    const v = Math.floor(Math.random() * M);
+    const u = Math.floor(rand() * M);
+    const v = Math.floor(rand() * M);
     if (u === v) continue;
 
     const key = edgeKey(u, v);
     if (!edgeSet.has(key)) {
       edgeSet.add(key);
-      const w = Math.floor(Math.random() * maxWeight) + 1;
+      const w = Math.floor(rand() * maxWeight) + 1;
       edges.push({ u, v, w });
       adj[u].push({ to: v, w });
       adj[v].push({ to: u, w });
@@ -328,12 +346,11 @@ function generateConnectedGraph(M, N, maxWeight = 1000) {
 }
 
 // ==========================================
-// EXECUTORES DE BENCHMARK COM CRONOMETRAGEM
+// EXECUTORES DE BENCHMARK COM AMOSTRAGEM ESTÁVEL
 // ==========================================
 
-function runBenchmarkPrim(M, adj) {
-  const start = performance.now();
-
+// Execução única do Prim
+function executeSinglePrim(M, adj) {
   const pq = new FastMinHeap();
   const visited = new Uint8Array(M);
 
@@ -342,7 +359,6 @@ function runBenchmarkPrim(M, adj) {
   let heapPushes = 0;
   let heapPops = 0;
 
-  // Inicia com {peso: 0, vértice: 0} como no código C++
   pq.push(0, 0);
   heapPushes++;
 
@@ -357,7 +373,7 @@ function runBenchmarkPrim(M, adj) {
     visited[u] = 1;
     totalCost += peso;
     edgesCount++;
-    if (edgesCount === M) break; // Todos os M vértices alcançados
+    if (edgesCount === M) break;
 
     const neighbors = adj[u];
     for (let i = 0; i < neighbors.length; i++) {
@@ -369,29 +385,40 @@ function runBenchmarkPrim(M, adj) {
     }
   }
 
-  const durationMs = performance.now() - start;
+  return { totalCost, edgesCount, heapPushes, heapPops };
+}
+
+// Prim com amostragem múltipla (Multi-run) para eliminar ruído de microssegundos
+function runBenchmarkPrim(M, adj) {
+  // Para grafos pequenos (como M=7), executa múltiplas vezes para estabilizar o tempo
+  const iterations = M <= 20 ? 500 : (M <= 500 ? 5 : 3);
+
+  // Warmup para otimização JIT do V8
+  executeSinglePrim(M, adj);
+
+  const start = performance.now();
+  let lastRes = null;
+  for (let it = 0; it < iterations; it++) {
+    lastRes = executeSinglePrim(M, adj);
+  }
+  const totalElapsed = performance.now() - start;
+  const durationMs = totalElapsed / iterations;
 
   return {
     algorithm: 'Prim',
     durationMs: durationMs,
-    mstCost: totalCost,
-    edgesInMST: edgesCount - 1,
-    operations: heapPushes + heapPops,
-    detail: `${heapPushes.toLocaleString()} pushes / ${heapPops.toLocaleString()} pops`
+    mstCost: lastRes.totalCost,
+    edgesInMST: lastRes.edgesCount - 1,
+    operations: lastRes.heapPushes + lastRes.heapPops,
+    detail: `${lastRes.heapPushes.toLocaleString()} pushes / ${lastRes.heapPops.toLocaleString()} pops`
   };
 }
 
-function runBenchmarkKruskal(M, edges) {
-  const start = performance.now();
-
-  // 1. Ordenação das arestas O(N log N)
-  const sortStart = performance.now();
+// Execução única do Kruskal
+function executeSingleKruskal(M, edges) {
   const sorted = edges.slice();
   sorted.sort((a, b) => a.w - b.w);
-  const sortDurationMs = performance.now() - sortStart;
 
-  // 2. DSU
-  const dsuStart = performance.now();
   const dsu = new FastDSU(M);
   let totalCost = 0;
   let edgesCount = 0;
@@ -408,18 +435,32 @@ function runBenchmarkKruskal(M, edges) {
       if (edgesCount === M - 1) break;
     }
   }
-  const dsuDurationMs = performance.now() - dsuStart;
-  const durationMs = performance.now() - start;
+
+  return { totalCost, edgesCount, edgesEvaluated, dsuUnions };
+}
+
+// Kruskal com amostragem múltipla para estabilidade
+function runBenchmarkKruskal(M, edges) {
+  const iterations = M <= 20 ? 500 : (M <= 500 ? 5 : 3);
+
+  // Warmup JIT
+  executeSingleKruskal(M, edges);
+
+  const start = performance.now();
+  let lastRes = null;
+  for (let it = 0; it < iterations; it++) {
+    lastRes = executeSingleKruskal(M, edges);
+  }
+  const totalElapsed = performance.now() - start;
+  const durationMs = totalElapsed / iterations;
 
   return {
     algorithm: 'Kruskal',
     durationMs: durationMs,
-    sortDurationMs: sortDurationMs,
-    dsuDurationMs: dsuDurationMs,
-    mstCost: totalCost,
-    edgesInMST: edgesCount,
-    operations: edgesEvaluated,
-    detail: `Sort: ${sortDurationMs.toFixed(2)}ms | DSU: ${dsuDurationMs.toFixed(2)}ms (${edgesEvaluated.toLocaleString()} arestas testadas)`
+    mstCost: lastRes.totalCost,
+    edgesInMST: lastRes.edgesCount,
+    operations: lastRes.edgesEvaluated,
+    detail: `${lastRes.edgesEvaluated.toLocaleString()} arestas testadas (${lastRes.dsuUnions} uniões)`
   };
 }
 
@@ -547,6 +588,11 @@ function setupBenchmarkUI() {
         setTimeout(() => { copyBtn.innerHTML = orig; }, 1800);
       }
     });
+  };
+
+  window.randomizeGraphSeed = function() {
+    currentSeedOffset = Math.floor(Math.random() * 1000000);
+    executeLiveBenchmark();
   };
 
   // Carrega Prim inicialmente no visualizador de código
